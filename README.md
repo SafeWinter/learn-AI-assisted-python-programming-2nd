@@ -81,8 +81,8 @@ Status available：:heavy_check_mark: (Completed) | :hourglass_flowing_sand: (Wo
 | No.  |                        Chapter Title                         |          Status          |
 | :--: | :----------------------------------------------------------: | :----------------------: |
 | Ch00 |                 [Preface](./Ch00-Preface.md)                 |    :heavy_check_mark:    |
-| Ch01 | [Introducing AI-assisted programming with GitHub Copilot](./Ch01-Introducing_AI-assisted_programming_with_GitHub_Copilot.md) | :hourglass_flowing_sand: |
-| Ch02 | [Getting started with Copilot](./Ch02-Getting_started_with_Copilot.md) |        :no_entry:        |
+| Ch01 | [Introducing AI-assisted programming with GitHub Copilot](./Ch01-Introducing_AI-assisted_programming_with_GitHub_Copilot.md) |    :heavy_check_mark:    |
+| Ch02 | [Getting started with Copilot](./Ch02-Getting_started_with_Copilot.md) | :hourglass_flowing_sand: |
 | Ch03 |     [Designing functions](./Ch03-Designing_functions.md)     |        :no_entry:        |
 | Ch04 | [Reading Python code: Part 1](./Ch04-Reading_Python_code_Part_1.md) |        :no_entry:        |
 | Ch05 | [Reading Python code: Part 2](./Ch05-Reading_Python_code_Part_2.md) |        :no_entry:        |
