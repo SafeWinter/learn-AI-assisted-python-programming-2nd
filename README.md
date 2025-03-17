@@ -78,21 +78,21 @@
 
 Status available：:heavy_check_mark: (Completed) | :hourglass_flowing_sand: (Working) | :no_entry: (Not Started) | :orange_book: (Finish reading)
 
-| No.  |                        Chapter Title                         |          Status          |
-| :--: | :----------------------------------------------------------: | :----------------------: |
-| Ch00 |                 [Preface](./Ch00-Preface.md)                 |    :heavy_check_mark:    |
-| Ch01 | [Introducing AI-assisted programming with GitHub Copilot](./Ch01-Introducing_AI-assisted_programming_with_GitHub_Copilot.md) |    :heavy_check_mark:    |
-| Ch02 | [Getting started with Copilot](./Ch02-Getting_started_with_Copilot.md) |    :heavy_check_mark:    |
-| Ch03 |     [Designing functions](./Ch03-Designing_functions.md)     |    :heavy_check_mark:    |
-| Ch04 | [Reading Python code: Part 1](./Ch04-Reading_Python_code_Part_1.md) | :hourglass_flowing_sand: |
-| Ch05 | [Reading Python code: Part 2](./Ch05-Reading_Python_code_Part_2.md) |        :no_entry:        |
-| Ch06 | [Testing and prompt engineering](./Ch06-Testing_and_prompt_engineering.md) |        :no_entry:        |
-| Ch07 |   [Problem decomposition](./Ch07-Problem_decomposition.md)   |        :no_entry:        |
-| Ch08 | [Debugging and better understanding your code](./Ch08-Debugging_and_better_understanding_your_code.md) |        :no_entry:        |
-| Ch09 | [Automating tedious tasks](./Ch09-Automating_tedious_tasks.md) |        :no_entry:        |
-| Ch10 |       [Making some games](./Ch10-Making_some_games.md)       |        :no_entry:        |
-| Ch11 | [Creating an authorship identification program](./Ch11-Creating_an_authorship_identification_program.md) |        :no_entry:        |
-| Ch12 |       [Future directions](./Ch12-Future_directions.md)       |        :no_entry:        |
+| No.  |          Status          |                        Chapter Title                         |
+| :--: | :----------------------: | :----------------------------------------------------------: |
+| Ch00 |    :heavy_check_mark:    |                 [Preface](./Ch00-Preface.md)                 |
+| Ch01 |    :heavy_check_mark:    | [Introducing AI-assisted programming with GitHub Copilot](./Ch01-Introducing_AI-assisted_programming_with_GitHub_Copilot.md) |
+| Ch02 |    :heavy_check_mark:    | [Getting started with Copilot](./Ch02-Getting_started_with_Copilot.md) |
+| Ch03 |    :heavy_check_mark:    |     [Designing functions](./Ch03-Designing_functions.md)     |
+| Ch04 | :hourglass_flowing_sand: | [Reading Python code: Part 1](./Ch04-Reading_Python_code_Part_1.md) |
+| Ch05 |        :no_entry:        | [Reading Python code: Part 2](./Ch05-Reading_Python_code_Part_2.md) |
+| Ch06 |        :no_entry:        | [Testing and prompt engineering](./Ch06-Testing_and_prompt_engineering.md) |
+| Ch07 |        :no_entry:        |   [Problem decomposition](./Ch07-Problem_decomposition.md)   |
+| Ch08 |        :no_entry:        | [Debugging and better understanding your code](./Ch08-Debugging_and_better_understanding_your_code.md) |
+| Ch09 |        :no_entry:        | [Automating tedious tasks](./Ch09-Automating_tedious_tasks.md) |
+| Ch10 |        :no_entry:        |       [Making some games](./Ch10-Making_some_games.md)       |
+| Ch11 |        :no_entry:        | [Creating an authorship identification program](./Ch11-Creating_an_authorship_identification_program.md) |
+| Ch12 |        :no_entry:        |       [Future directions](./Ch12-Future_directions.md)       |
 
 
 
