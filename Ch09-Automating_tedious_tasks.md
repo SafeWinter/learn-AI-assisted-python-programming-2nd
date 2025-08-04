@@ -488,7 +488,136 @@ pip install "PyPDF2 < 3.0.0"
 
 再来看另一条常见的解决方案：改用新的第三方模块。虽然有点冒险，好在有 `Copilot` 护航，可以很好地解决陌生工具库学习曲线陡峭的一系列问题。
 
-How can I use the Python `PyMuPDF` library to merge .pdf files?（**pdfrw**、**ReportLab**）
+由于 `Copilot` 的提示内容已经完全更新，这里就不按原书内容照搬 `PyMuPDF` 模块了。根据最新的推荐第三方模块，下一个备选项是 `pdfrw`，于是直接提问：
+
+```markdown
+How can I use the Python pdfrw library to merge .pdf files?
+```
+
+> **Github Copilot**
+>
+> You can use the `pdfrw` library to merge PDF files in Python as follows:
+>
+> ```python
+> # Install pdfrw if you haven't already:
+> # pip install pdfrw
+> 
+> from pdfrw import PdfReader, PdfWriter
+> 
+> pdfs = ['file1.pdf', 'file2.pdf', 'file3.pdf']  # List your PDF files here
+> writer = PdfWriter()
+> 
+> for pdf in pdfs:
+>     reader = PdfReader(pdf)
+>     writer.addpages(reader.pages)
+> 
+> writer.write('merged_output.pdf')
+> ```
+>
+> Replace `'file1.pdf', 'file2.pdf', 'file3.pdf'` with your actual PDF filenames.
+> This will create a new file called `merged_output.pdf` containing all the merged PDFs.
+
+这个回复同样很简洁，就它了。
+
+先本地安装 `pdfrw` 模块：
+
+```python
+pip install pdfrw
+```
+
+然后清空刚才的 `PyPDF2` 的代码，改为 `pdfrw` 的即可：
+
+```python
+import os
+from pdfrw import PdfReader, PdfWriter
+ 
+def add_covers(report_dir, cover_dir, final_dir):
+    '''
+    report_dir is a directory of reports named 1.pdf, 2.pdf, and so on.
+    These files may be one page or more than one page.
+ 
+    cover_dir is a directory of covers, with one cover per report.
+    The filenames in this directory are cover1.pdf, cover2.pdf, and so on.
+    Each of these files is one page.
+ 
+    Add the cover to the beginning of each report,
+    and store all resulting pdfs in final_dir.
+    '''
+```
+
+剩下的工作就是根据 `Copilot` 的回复按回车确认，直到代码生成结束。完整代码如下：
+
+```python
+import os
+from pdfrw import PdfReader, PdfWriter
+ 
+def add_covers(report_dir, cover_dir, final_dir):
+    '''
+    report_dir is a directory of reports named 1.pdf, 2.pdf, and so on.
+    These files may be one page or more than one page.
+ 
+    cover_dir is a directory of covers, with one cover per report.
+    The filenames in this directory are cover1.pdf, cover2.pdf, and so on.
+    Each of these files is one page.
+ 
+    Add the cover to the beginning of each report,
+    and store all resulting pdfs in final_dir.
+    '''
+    if not os.path.exists(final_dir):
+        os.makedirs(final_dir)
+    for i in range(1, 100):  # Assuming a maximum of 99 reports
+        report_path = os.path.join(report_dir, f'{i}.pdf')
+        cover_path = os.path.join(cover_dir, f'cover{i}.pdf')
+        
+        if not os.path.exists(report_path) or not os.path.exists(cover_path):
+            continue
+        
+        report_pdf = PdfReader(report_path)
+        cover_pdf = PdfReader(cover_path)
+        
+        writer = PdfWriter()
+        writer.addpage(cover_pdf.pages[0])
+        for page in report_pdf.pages:
+            writer.addpage(page)
+        final_pdf_path = os.path.join(final_dir, f'final{i}.pdf')
+        writer.write(final_pdf_path)
+        print(f'Created {final_pdf_path} with cover and report {i}.pdf')
+        
+if __name__ == '__main__':
+    report_directory = 'reports'
+    cover_directory = 'covers'
+    final_directory = 'final_reports'
+    
+    add_covers(report_directory, cover_directory, final_directory)
+    print('All reports processed with covers added.')
+# This script adds covers to reports and saves them in a specified directory.
+# Ensure you have pdfrw installed: pip install pdfrw
+# Adjust the report_directory, cover_directory, and final_directory as needed.
+```
+
+从 `L39` 可知，`Copilot` 很贴心地自动新建了一个结果文件夹 `final_reports`，可以直接运行而不用担心覆盖之前的处理结果。运行命令：
+
+```python
+python demo.py
+```
+
+实测结果如下（完全符合预期）：
+
+![](assets/9.11.png)
+
+**图 9-11：改用 pdfrw 模块重写 PDF 合并工具脚本实测结果截图**
+
+时隔近一年不得不承认，尽管 `Copilot` 用到的 `GPT-4.1` 模型可能不如 `Claude 3.5` 强大，但其具备的辅助编程能力已经可以胜任日常环境下的绝大部分重复性强的任务了。
+
+
+
+### 4.4 基本流程梳理
+
+最后再复盘梳理一下本示例场景下的基本处理流程（尤其是涉及中途变更 Python 模块的情况），如图 9-12 所示：
+
+![](assets/9.12.png)
+
+**图 9-12：考虑换用其他 Python 模块时的 Copilot 辅助编程基本流程**
 
 
 
