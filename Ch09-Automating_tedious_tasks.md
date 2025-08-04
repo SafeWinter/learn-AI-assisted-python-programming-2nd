@@ -258,7 +258,9 @@ I need to write a Python program that merges .pdf files. How do I do this?
 
 方案海选阶段我们仍然希望不安装第三方模块，因此继续追问：
 
-
+```markdown
+Is there a way I can do it without having to install a Python module?
+```
 
 得到如下回复：
 
