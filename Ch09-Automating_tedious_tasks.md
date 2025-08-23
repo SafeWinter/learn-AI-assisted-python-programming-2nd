@@ -623,6 +623,237 @@ python demo.py
 
 
 
+## 5 示例3：自动合并手机相册
+
+### 5.1 确认需求
+
+这个应用场景就很常见了：一大家子人出门旅游一大圈后，想把所有人拍的旅游相片汇总到一块。此时每人手机中的照片都不全，还可能有彼此重复的图片。为了对得起本章最后一个出场的压轴案例，再上点难度：文件名相同的图片未必是同一张图片，内容相同的图片文件名也可能不一样。要求：利用 `Python` 脚本实现这样的相册批量去重汇总。
+
+整理一下需求：已知某个演示目录下有两个图片目录 `pictures1` 和 `pictures2`，分别包含 `98` 张和 `112` 张格式均为 `.png` 的图片。其中内容重复的共有 `10` 张，且同名图片的内容未必相同。编写一段 `Python` 脚本来合并两个图片目录，要求对同名不同内容的图片重命名（每重复一次，新文件名末尾追加一个下划线 `_`）。
+
+图片同名或内容重复情况如下图 9-13 所示：
+
+![](assets/9.13.png)
+
+**图 9-13：图片去重合并过程中可能出现的同名、同质及重命名规则示意图**
+
+
+
+### 5.2 方案海选
+
+先询问拷贝文件的方法，直接对话 `GIthub Copilot`：
+
+> **我**：I need to write a Python program that copies files. How do I do this?
+>
+> **GIthub Copilot**：You can use Python’s built-in `shutil` module to copy files. Here’s a simple example:
+>
+> ```python
+> import shutil
+> 
+> # Copy file from source to destination
+> source = 'path/to/source/file.txt'
+> destination = 'path/to/destination/file.txt'
+> 
+> shutil.copy2(source, destination)  # copy2 preserves metadata
+> ```
+>
+> Replace the paths with your actual file locations. This will copy the file and preserve its metadata.
+
+虽然 `GPT-4.1` 也是答的 `shutil` 模块，但没有像书中那样主动提示重复操作会覆盖之前的目标文件，可能是出现了些许弱化吧，好在问题不大。
+
+接着再进一步确认 `shutil` 是否为内置模块：
+
+> **我**：Is this shutil module built into Python?
+>
+> **GIthub Copilot**：Yes, the `shutil` module is built into Python’s standard library. You do not need to install anything extra to use it.
+
+确实是，复制逻辑就这样吧；再来看去重的操作，文件名并不能作为内容相同的依据，需要另想办法：
+
+> **我**：Using Python, how can I determine whether .png files are the same?
+>
+> **GIthub Copilot**：To determine whether two `.png` files are the same in Python, you can compare their contents using a hash function. Here’s an example using `hashlib`:
+>
+> ```python
+> import hashlib
+> 
+> def file_hash(filepath):
+>     hasher = hashlib.sha256()
+>     with open(filepath, 'rb') as f:
+>         for chunk in iter(lambda: f.read(4096), b''):
+>             hasher.update(chunk)
+>     return hasher.hexdigest()
+> 
+> file1 = 'image1.png'
+> file2 = 'image2.png'
+> 
+> if file_hash(file1) == file_hash(file2):
+>     print("The .png files are the same.")
+> else:
+>     print("The .png files are different.")
+> ```
+>
+> This compares the actual file contents, not just file names or metadata.
+
+这次的提示内容就和书中完全不同了，简单测了一下，和 `filecmp.cmp()` 方法效果一样；但这里要处理的是多个图片的去重问题，因此进一步深入：
+
+> **我**：What if I have hundreds of .png files and I want to find duplicates—is that approach you gave me still good?
+>
+> **GIthub Copilot**：Yes, using hashes is still a good approach for finding duplicates among hundreds of `.png` files. You can compute the hash for each file and group files with the same hash value. Here’s how you can do it:
+>
+> ```python
+> import os
+> import hashlib
+> from collections import defaultdict
+> 
+> def file_hash(filepath):
+>     hasher = hashlib.sha256()
+>     with open(filepath, 'rb') as f:
+>         for chunk in iter(lambda: f.read(4096), b''):
+>             hasher.update(chunk)
+>     return hasher.hexdigest()
+> 
+> folder = 'path/to/your/pngs'
+> hash_map = defaultdict(list)
+> 
+> for filename in os.listdir(folder):
+>     if filename.lower().endswith('.png'):
+>         full_path = os.path.join(folder, filename)
+>         h = file_hash(full_path)
+>         hash_map[h].append(filename)
+> 
+> # Print duplicates
+> for files in hash_map.values():
+>     if len(files) > 1:
+>         print("Duplicate files:", files)
+> ```
+>
+> This will print lists of duplicate `.png` files found in the folder.
+
+这次的效果就好多了：`Copilot` 没有像书中那样针对两个图片文件夹执行双重 `for` 循环，而是利用文件的哈希值来和指定文件夹中的所有图片进行比较。虽然只给出了单个文件夹路径的解决方案，实际改造时可以变更为多个文件夹。
+
+最后再确认一遍用到的模块都是内置模块就行了：
+
+> **我**：Are these modules used above, i.e. os, hashlib and collections all built into Python?
+>
+> **GIthub Copilot**：Yes, `os`, `hashlib`, and `collections` are all built into Python’s standard library. You do not need to install anything extra to use them.
+
+至此，所有的技术难点都已经探明了。这里暂时不考虑代码的性能，牢记“先完成再完美”的道理，不要过早或过分优化代码。
+
+
+
+### 5.3 设计思路
+
+下面按照自上而下的设计思路对目标问题进行拆解。为了保护原始数据，应该将合并后的图片放到一个新的文件夹下，并且支持多文件夹合并。因此，可以将最顶层的函数命名为 `make_copies`。它有两个参数：一是待合并的相册文件夹路径数组，即支持多相册合并；另一个是新相册文件夹的路径，用于存放所有不重复的图片。函数签名如下：
+
+```python
+def make_copies(dirs, target_dir)
+```
+
+该函数将遍历每一个相册文件夹，并将其中的每一张图片同目标文件夹内的所有图片进行重复判定，以此决定是否复制到新文件夹：
+
+- 若图片内容重复，则不执行复制；
+- 若不重复，则复制到指定的新文件夹。根据文件名是否需要变更，这里又分两种情况：
+  - 若文件名不重复，则保留该文件名，直接复制；
+  - 若文件名重复，则按指定命名规则（加下划线）重命名后，再执行文件复制。
+
+对于第一个逻辑分支，可以交给一个子函数 `make_copy()` 来处理；第二个分支在 `make_copy()` 内部，其中包含一个重命名的逻辑，同理，可以交给另一个子函数 `get_good_filename()` 来处理。
+
+于是整个脉络就清晰了：
+
+```mermaid
+graph LR
+    A[make_copies] --> B[make_copy]
+    B --> C[get_good_filename]
+```
+
+
+
+### 5.4 脚本实现
+
+有了刚才的自上而下设计，实现过程则要反着来，每个函数都按照此前介绍过的套路，确定好函数签名、`docstring` 注释等等，最后让 `Github Copilot` 负责每个函数的脚本实现即可。
+
+先来看 `get_good_filename()` 函数的签名，所需参数无非当前文件的完整路径，即 `fname`。一旦判定文件已存在，则在文件名末尾追加一个下划线，然后再次判定是否存在，直到不重复为止。因此函数签名和提示词可以设计如下：
+
+```python
+def get_good_filename(fname):
+    '''
+    fname is the name of a png file.
+    
+    While the file fname exists, add an _ character
+    right before the .png part of the filename;
+    e.g. 9595.png becomes 9595_.png.
+    
+    Return the resulting filename.
+    '''
+```
+
+接着再来分析 `make_copy()` 函数，它是在遍历过程中，用于判定每张图片是否可以复制到目标文件夹的核心逻辑，因此必须包含一个图片路径和一个目标文件夹路径，具体设计如下：
+
+```python
+def make_copy(fname, target_dir):
+    '''
+    fname is a filename like pictures1/1262.png.
+    target_dir is the name of a directory.
+    
+    Compare the file fname to all files in target_dir.
+    If fname is not identical to any file in target_dir, copy it to target_dir
+    '''
+```
+
+最后是最顶层的 `make_copy()` 函数，它将依赖 `make_copy()` 函数完成相册的遍历及后续处理，提示词设计如下：
+
+```python
+def make_copies(dirs, target_dir):
+    '''
+    dirs is a list of directory names.
+    target_dir is the name of a directory.
+ 
+    Check each file in the directories and compare it to all files 
+    in target_dir. If a file is not identical to any file in 
+    target_dir, copy it to target_dir
+    '''
+```
+
+剩下的工作就是不停地按回车键，直到 `Github Copilot` 自动补全每个函数的函数体部分。
+
+实测过程中发现，在 `demo.py` 文件中补全代码有时候并不能和 `Copilot Chat` 窗口中的内容保持一致，判定时又出现了书中的 `filecmp` 模块，生成了一段全新的代码逻辑。这很可能是 `VSCode` 在补全时意外调用了其他大模型。解决方案也很简单：清空旧代码，并按照 `Copilot Chat` 上下文将最关键的那句 `import hashlib` 复制到 `demo.py` 中，这样 `Copilot` 就知道按 `hashlib` 的方式补全剩余代码了。
+
+补全所有函数后，再根据情况调用最外层函数即可：
+
+```python
+if __name__ == "__main__":
+    dirs = ['pictures1', 'pictures2']
+    target_dir = 'pictures_combined'
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    make_copies(dirs, target_dir)
+```
+
+最终在命令行运行 `python demo.py` 即可验证结果：
+
+![](assets/9.14.png)
+
+最后验证新文件夹的数量是否为 200：
+
+```powershell
+$ (ls ./pictures_combined).Count
+200
+```
+
+大功告成。
+
+
+
+## 6 本章小结
+
+- 对于枯燥且机械重复的日常任务，可以尝试编制自动化工具来批量完成；
+- 工具编程可充分利用现成的 Python 模块，无需事必躬亲；
+- 活用 `Copilot Chat` 来决定具体依赖哪些 Python 模块；
+- 在与 `Copilot` 对话时，可以通过优缺点对比完成方案海选阶段；
+- Python 提供了大量开箱即用的工具模块：剪切板操作、PDF 操作、文件操作……
+
+
+
 ---
 
 [^1]: 以表格形式输出是我后来加的，为了方便作对比。这里的提示词我都尽量坚持用英文，以免因中文数据集训练不足而导致提示内容出现较大的偏差。现在也应该没人再质疑掌握英文的重要性了吧。
