@@ -814,9 +814,11 @@ def make_copies(dirs, target_dir):
     '''
 ```
 
-剩下的工作就是不停地按回车键，直到 `Github Copilot` 自动补全每个函数的函数体部分。
+剩下的工作就是在每个函数中不停地按回车键，直到 `Github Copilot` 自动补全每个函数的函数体。
 
-实测过程中发现，在 `demo.py` 文件中补全代码有时候并不能和 `Copilot Chat` 窗口中的内容保持一致，判定时又出现了书中的 `filecmp` 模块，生成了一段全新的代码逻辑。这很可能是 `VSCode` 在补全时意外调用了其他大模型。解决方案也很简单：清空旧代码，并按照 `Copilot Chat` 上下文将最关键的那句 `import hashlib` 复制到 `demo.py` 中，这样 `Copilot` 就知道按 `hashlib` 的方式补全剩余代码了。
+实测过程中发现，在 `demo.py` 文件中补全代码有时候并不能和 `Copilot Chat` 窗口中的内容保持一致，判定时又出现了书中的 `filecmp` 模块，生成了一段全新的代码逻辑。这很可能是 `VSCode` 在补全时意外调用了其他大模型。
+
+解决方案也很简单：清空旧代码，并按照 `Copilot Chat` 上下文将最关键的那句 `import hashlib` 复制到 `demo.py` 中，这样 `Copilot` 就知道按 `hashlib` 的方式补全剩余代码了。
 
 补全所有函数后，再根据情况调用最外层函数即可：
 
@@ -833,6 +835,8 @@ if __name__ == "__main__":
 
 ![](assets/9.14.png)
 
+**图 9-14：实测相册合并脚本时的命令行输出情况**
+
 最后验证新文件夹的数量是否为 200：
 
 ```powershell
@@ -841,6 +845,72 @@ $ (ls ./pictures_combined).Count
 ```
 
 大功告成。
+
+P.S.: 为了方便大家对照，还是给出完整的 `demo.py` 脚本：
+
+```python
+import os
+import shutil
+import hashlib
+    
+def get_good_filename(fname):
+    '''
+    fname is the name of a png file.
+    
+    While the file fname exists, add an _ character
+    right before the .png part of the filename;
+    e.g. 9595.png becomes 9595_.png.
+    
+    Return the resulting filename.
+    '''
+    while os.path.exists(fname):
+        fname = fname.replace('.png', '_.png')
+    return fname
+
+def make_copy(fname, target_dir):
+    '''
+    fname is a filename like pictures1/1262.png.
+    target_dir is the name of a directory.
+    
+    Compare the file fname to all files in target_dir.
+    If fname is not identical to any file in target_dir, copy it to target_dir
+    '''
+    fname_hash = hashlib.md5(open(fname,'rb').read()).hexdigest()
+    for existing_file in os.listdir(target_dir):
+        existing_file_path = os.path.join(target_dir, existing_file)
+        existing_file_hash = hashlib.md5(open(existing_file_path,'rb').read()).hexdigest()
+        if fname_hash == existing_file_hash:
+            print(f"File {fname} is identical to {existing_file_path}. Not copying.")
+            return
+    # If we reach here, the file is not identical to any in target_dir
+    target_fname = os.path.join(target_dir, os.path.basename(fname))
+    target_fname = get_good_filename(target_fname)
+    shutil.copy(fname, target_fname)
+    print(f"Copied {fname} to {target_fname}")
+
+def make_copies(dirs, target_dir):
+    '''
+    dirs is a list of directory names.
+    target_dir is the name of a directory.
+ 
+    Check each file in the directories and compare it to all files 
+    in target_dir. If a file is not identical to any file in 
+    target_dir, copy it to target_dir
+    '''
+    for d in dirs:
+        for fname in os.listdir(d):
+            full_path = os.path.join(d, fname)
+            if os.path.isfile(full_path):
+                make_copy(full_path, target_dir)
+                
+                
+if __name__ == "__main__":
+    dirs = ['pictures1', 'pictures2']
+    target_dir = 'pictures_combined'
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    make_copies(dirs, target_dir)
+```
 
 
 
