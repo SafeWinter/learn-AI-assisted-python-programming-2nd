@@ -659,15 +659,9 @@ python demo.py
 >
 > Replace the paths with your actual file locations. This will copy the file and preserve its metadata.
 
-虽然 `GPT-4.1` 也是答的 `shutil` 模块，但没有像书中那样主动提示重复操作会覆盖之前的目标文件，可能是出现了些许弱化吧，好在问题不大。
+虽然 `GPT-4.1` 也是答的 `shutil` 模块，但没有像书中那样主动提示重复操作会覆盖之前的目标文件，可能是出现了些许弱化吧，好在问题不大。此外，`Copilot` 还提到了 `shutil` 是一个内置（built-in）模块，因此无需像原书那样再次确认，这么一来文件复制的核心逻辑就算跑通了。
 
-接着再进一步确认 `shutil` 是否为内置模块：
-
-> **我**：Is this shutil module built into Python?
->
-> **GIthub Copilot**：Yes, the `shutil` module is built into Python’s standard library. You do not need to install anything extra to use it.
-
-确实是，复制逻辑就这样吧；再来看去重的操作，文件名并不能作为内容相同的依据，需要另想办法：
+再来看去重的操作，文件名并不能作为内容相同的依据，需要另想办法：
 
 > **我**：Using Python, how can I determine whether .png files are the same?
 >
