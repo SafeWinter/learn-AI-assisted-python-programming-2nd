@@ -91,8 +91,8 @@ Status available：:heavy_check_mark: (Completed) | :hourglass_flowing_sand: (Wo
 | Ch08 |    :heavy_check_mark:    | [Debugging and better understanding your code](./Ch08-Debugging_and_better_understanding_your_code.md) |
 | Ch09 |    :heavy_check_mark:    | [Automating tedious tasks](./Ch09-Automating_tedious_tasks.md) |
 | Ch10 | :hourglass_flowing_sand: |       [Making some games](./Ch10-Making_some_games.md)       |
-| Ch11 |        :no_entry:        | [Creating an authorship identification program](./Ch11-Creating_an_authorship_identification_program.md) |
-| Ch12 |        :no_entry:        |       [Future directions](./Ch12-Future_directions.md)       |
+| Ch11 |      :orange_book:       | [Creating an authorship identification program](./Ch11-Creating_an_authorship_identification_program.md) |
+| Ch12 |      :orange_book:       |       [Future directions](./Ch12-Future_directions.md)       |
 
 
 
