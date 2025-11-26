@@ -544,6 +544,8 @@ if __name__ == '__main__':
 
 ![](assets/10.5.png)
 
+**图 10.5 简化版 Bogart 游戏中一回合的游戏流程梳理图**
+
 该游戏原始版本的说明我也看了，有必要补充两个细节：
 
 - 原本是设计的 2 至 6 人同时参与，随机选一人开始后沿顺时针切换玩家，本例简化为两人互换；
@@ -555,22 +557,493 @@ if __name__ == '__main__':
 
 对照上面梳理的游戏流程，就可以大体梳理出如下的执行顺序：
 
-1. 初始化奖池，并让 **玩家 1** 和 **玩家 2** 的筹码归零（游戏设置阶段的任务）；
-2. 随机选择 **玩家 1** 或 **玩家 2** 开始游戏（游戏设置阶段的任务）；
+1. 初始化奖池，并让 **玩家1** 和 **玩家2** 的筹码归零（游戏设置阶段的任务）；
+2. 随机选择 **玩家1** 或 **玩家2** 开始游戏（游戏设置阶段的任务）；
 3. 进入游戏运行阶段：在游戏结束前，循环执行下列操作：
-   1. 打印奖池筹码数、**玩家 1** 筹码数、以及 **玩家 2** 的筹码数。
+   1. 打印奖池筹码数、**玩家1** 筹码数、以及 **玩家2** 的筹码数。
    2. 当前玩家体验一轮完整回合（投掷、决定）。
    3. 若当前玩家决定拿钱走人，则拿走奖池筹码，奖池筹码数归零。
    4. 换另一位玩家开始游戏。
-4. 游戏结束：打印赢得比赛的玩家名称（**玩家 1** 或 **玩家 2**）。
+4. 游戏结束：打印赢得比赛的玩家名称（**玩家1** 或 **玩家2**）。
 
-仔细观察上述流程，看看哪些节点可以直接编程，哪些需要抽取子函数独立完成。很明显，除了 `3.2`、`3.3`、`3.4` 以外，其余步骤都是简单的赋值和结果输出，不涉及很复杂的游戏交互逻辑，因此都可以不创建子函数完成。于是剩下这三个步骤：
+仔细观察上述流程，看看哪些节点可以直接编程，哪些需要抽取子函数独立完成：
+
+步骤 `1` 和 `2` 都是简单的赋值，无需子函数；
+
+步骤 `3` 需要判定游戏是否结束，分两种情况：任一玩家的筹码数是否达到 30 枚，或者骰子数是否为 5。这里可以引入子函数，名称就叫 `game_over`，参数有三个：**玩家1** 的筹码、**玩家2** 的筹码、上一轮的骰子组合；
+
+步骤 `3.1` 为简单输出，无需子函数；
+
+步骤 `3.2`、`3.3`、`3.4` 均为核心逻辑，先跳过本轮分析；
+
+步骤 `4` 就是简单的打印逻辑，无需子函数。
+
+于是剩下这三个核心步骤：
 
 2. 当前玩家体验一次完整回合。
 3. 若当前玩家决定拿钱走人，则拿走奖池筹码，奖池筹码数归零。
 4. 换另一位玩家开始游戏。
 
-其中
+这三个步骤中，`3.2` 又是最核心的一步。其实原书这一段漏了一个关键细节：为什么要分成这三步进行？按游戏规则，从当前玩家开始掷骰子，到最终换人前，受影响的变量共有四个：奖池筹码数、**玩家1**、**玩家2** 的筹码数、以及掷骰子的结果。如果就设计成一个函数，那么参数和返回值都要保持四个，变量太多，不符合 `Python` 编程的最佳实践。再仔细观察，其实可以剔除两个玩家的筹码数，仅将另两个从子函数中更新后返回给主流程即可，然后再在主流程中根据当前玩家是谁来更新对应的筹码。这样一来既控制了子函数的复杂度，又能减少次要变量的反复传参、更新和返回，因此便有了 `3.2` 和 `3.3` 两个子步骤。
+
+于是，`3.2` 中的完整回合就是一个独立的子函数，不妨命名为  `take_full_turn`，接收开始本轮回合的奖池筹码数 `pot_chains` 为参数，返回更新后的 `pot_chains` 和最终的投掷结果 `rolls`；而在 `take_full_turn` 内部，主要完成两个任务：一是生成骰子序列，参数是具体的骰子数，不妨叫 `roll_dice`，投出结果后，根据玩家是否继续，来决定下一次的奖池数和骰子数（分别在本次基础上加 1），直到玩家出局或主动退出该回合。而循环投掷的判定条件为点数不为 1 且玩家选择继续，可以单列一个子函数 `turn_over`，表示本轮掷骰子是否继续。
+
+而步骤 `3.3` 则根据最新的奖池筹码和投掷结果，决定是否可以给指定玩家累加筹码，如果可以，则说明没有出局，并且累加后的奖池筹码还须清零；但如果是出局，则不累加，奖池的筹码滚入下一个回合。这一步并不复杂，因此无需创建子函数。
+
+最后，步骤 `3.4` 虽然表面看只是换下一个玩家，其实还暗藏了一个前提：游戏还没有结束。如果已经结束了，这一步也是可以跳过的，因此可以复用 `game_over` 函数，然后再更新当前玩家 `current_player`。这一步可以抽取一个子函数 `switch_player`，参数即 `game_over` 需要的参数，外加一个 `current_player`。
+
+于是 `3.2` 的大致结构就出来了：其中肯定包含一个 `while` 循环，判定条件为投掷结果是否出局；在循环体中，如果选择继续，则迭代更新投掷结果和奖池筹码；否则直接跳出循环。一旦跳出循环，则表示该玩家本轮回合结束，此时的投掷结果和奖池筹码将作为后续步骤的参数，完成玩家筹码和奖池状态的更新。
+
+另外，不管投几个骰子，逻辑都是类似的，都是从 `random` 模块逐个产生，最终形成一个随机序列，因此可以通过一个新的子函数专门处理。
+
+最终梳理出的外层函数 `play` 的子函数如下：
+
+![](assets/10.6.png)
+
+**图 10.6 简化版 Bogart 游戏的函数拆解示意图**
+
+
+
+### 10.4.4 自底向上的函数实现
+
+梳理完每层的函数后，再从叶子函数开始往上实现各业务逻辑。
+
+#### 1 game_over 函数
+
+首先是公用的 `game_over`，参数有三个：**玩家1** 的筹码数 `player1`、**玩家2** 的筹码数 `player2`，以及当前的骰子结果 `rolls`。手动补全函数签名、各参数含义及函数功能特性描述（`docstring`）如下：
+
+```python
+def game_over(player1, player2, rolls):
+    '''
+    player1 is the number of chips that player 1 has.
+    player2 is the number of chips that player 2 has.
+    rolls is the last list of dice rolls.
+ 
+    Return True if the game is over, False otherwise.
+    
+    The game is over if player1 has at least 30 chips, 
+    or player 2 has at least 30 chips, 
+    or there are 5 rolls none of which is a 1.
+    '''
+    if player1 >= 30 or player2 >= 30:
+        return True
+    if len(rolls) == 5 and 1 not in rolls:
+        return True
+    return False
+```
+
+这里其实可以联立三个判定条件，改为：
+
+```python
+def game_over(player1, player2, rolls):
+    # -- snip --
+    return player1 >= 30 or player2 >= 30 or \
+            (len(rolls) == 5 and not 1 in rolls) 
+```
+
+
+
+#### 2 switch_player 函数
+
+有了 `game_over` 判定函数，就可以先实现依赖它的 `switch_player` 函数了。参数只需要新增一个 `current_player` 即可，最终返回切换后的 `current_player`：
+
+```python
+def switch_player(player1, player2, rolls, current_player):
+    '''
+    player1 is the number of chips that player 1 has.
+    player2 is the number of chips that player 2 has.
+    rolls is the last list of dice rolls.
+    current_player is the current player (1 or 2).
+    
+    If the game is not over, switch current_player to the other player.
+    Return the new current_player.
+    '''
+    if not game_over(player1, player2, rolls):
+        current_player = 1 if current_player == 2 else 2
+    return current_player
+```
+
+总进度就完成了三个节点（和原书略有不同）：
+
+![](assets/10.7.png)
+
+
+
+#### 3 roll_dice 函数
+
+该函数根据传入的骰子个数，生成长度为该个数的随机骰子结果：
+
+```python
+import random
+def roll_dice(n):
+    '''
+    Create a list of n random integers between 1 and 6.
+    Print each of these integers, and return the list.
+    '''
+    return list(random.randint(1, 6) for _ in range(n))
+```
+
+
+
+#### 4 turn_over 函数
+
+该函数用于判定本轮回合是否结束，参数即投掷的骰子序列 `rolls`。如果玩家主动中止回合，则作为特殊情况直接 `break` 循环即可。于是有如下实现：
+
+```python
+def turn_over(rolls):
+    '''
+    Return True if the turn is over, False otherwise.
+    
+    The turn is over if any of the rolls is a 1, 
+    or if there are exactly five rolls.
+    '''
+    return 1 in rolls or len(rolls) == 5
+```
+
+
+
+#### 5 take_turn 函数
+
+有了 `roll_dice` 和 `turn_over` 两个子函数，就可以率先实现 `take_full_turn` 函数了。该函数接收奖池的初始筹码数，返回当前回合结束时的新奖池筹码、以及最终的骰子序列：
+
+```python
+def take_full_turn(pot_chips):
+    '''
+    The pot has pot_chips chips.
+    
+    Take a full turn for the current player and, once done, 
+    return a list of two values:
+    - the number of chips in the pot
+    - the final list of dice rolls.
+    
+    Begin by rolling 1 die, and put 1 chip into the pot.
+    Then, if the turn isn't over, ask the player whether 
+        they'd like to continue their turn.
+    If they respond 'n', then the turn is over.
+    If they respond 'y', then roll one more die than last time, 
+        and add 1 chip to the pot for each die that is rolled.
+    (for example, if 3 dice were rolled last time, then 
+        roll 4 dice and add 4 chips to the pot.)
+    If the turn is not over, repeat by asking the player again 
+        whether they'd like to continue their turn.
+    '''
+    rolls = roll_dice(1)
+    pot_chips += 1
+    while not turn_over(rolls):
+        keep_going = input("Would you like to continue your turn? (y/n) ")
+        if keep_going == 'n':
+            break
+        elif keep_going == 'y':
+            rolls = roll_dice(len(rolls) + 1)
+            pot_chips += len(rolls)
+    return [pot_chips, rolls]
+```
+
+这样就又实现了三个关键节点：
+
+![](assets/10.8.png)
+
+
+
+#### 6 wins_chips 函数
+
+如上图所示，该函数用于在当前回合结束后，根据投骰子结果判定玩家是出局退出的还是主动退出的，如果是后者，则需要将奖池筹码累加给该玩家，否则奖池筹码滚动到下一回合备用（即不作任何操作）：
+
+```python
+def wins_chips(rolls):
+    '''
+    Return True if the player wins chips, False otherwise.
+    
+    The player wins the chips if none of the rolls is a 1.
+    '''
+    return not 1 in rolls
+```
+
+
+
+#### 7 play 主函数的实现
+
+至此，所有的子函数都已经实现完毕：
+
+![](assets/10.9.png)
+
+接下来需要根据游戏规则，将上述所有子函数嵌入游戏的主流程中：
+
+```python
+def play():
+    '''
+    Play the game until the game is over.
+    
+    The pot starts with 0 chips, and each player starts with 0 chips.
+    
+    Randomly decide whether player 1 or player 2 goes first.
+    
+    Before each turn, print three lines of information:
+    1. The number of chips in the pot
+    2. The number of chips that each player has
+    3. Whether it is player 1's turn or player 2's turn
+    
+    Take a full turn for the current player. 
+    If they won the chips, add the chips in the pot to the 
+    total for that player and reset the pot to have 0 chips.
+ 
+    Then, switch to the other player's turn.
+ 
+    Once the game is over, print the current player 
+    (that's the player who won).
+    '''
+    pot_chips = 0
+    player1 = 0
+    player2 = 0
+    current_player = random.choice([1, 2])
+    while not game_over(player1, player2, []):
+        print(f"Pot has {pot_chips} chips.")
+        print(f"Player 1 has {player1} chips.")
+        print(f"Player 2 has {player2} chips.")
+        print(f"It is Player {current_player}'s turn.")
+        
+        pot_chips, rolls = take_full_turn(pot_chips)
+        
+        if wins_chips(rolls):
+            if current_player == 1:
+                player1 += pot_chips
+            else:
+                player2 += pot_chips
+            pot_chips = 0
+        
+        current_player = switch_player(player1, player2, rolls, current_player)
+        
+    print(f"Player {current_player} wins!")
+```
+
+最后在末尾调用 `play` 函数即可：
+
+```python
+if __name__ == "__main__":
+    play()
+```
+
+
+
+### 10.4.5 实测 Bogart 小游戏
+
+在命令行运行 `python demo.py` 启动该游戏，得到如下结果：
+
+![](assets/10.10.png)
+
+显然，游戏缺乏必要的中间结果输出。按照书中的提示自行补充完善，最终的实现版本如下：
+
+```python
+import random
+
+def game_over(player1, player2, rolls):
+    # -- snip --
+    return player1 >= 30 or player2 >= 30 \
+      or (len(rolls) == 5 and 1 not in rolls)
+      
+      
+def switch_player(player1, player2, rolls, current_player):
+    # -- snip --
+    if not game_over(player1, player2, rolls):
+        current_player = 1 if current_player == 2 else 2
+    return current_player
+
+def turn_over(rolls):
+    # -- snip --
+    return 1 in rolls or len(rolls) == 5
+  
+def roll_dice(n):
+    # -- snip --
+    rolls = list(random.randint(1, 6) for _ in range(n))
+    print("Rolled:", rolls, ('' if wins_chips(rolls) else '(Aced out)'))
+    return rolls
+  
+def take_full_turn(pot_chips):
+    # -- snip --
+    rolls = roll_dice(1)
+    pot_chips += 1
+    while not turn_over(rolls):
+        keep_going = input("Would you like to continue your turn? (y/n) ")
+        if keep_going == 'y':
+            rolls = roll_dice(len(rolls) + 1)
+            pot_chips += len(rolls)
+            print(f"Pot now has {pot_chips} chips.")
+        else:
+            break
+    return [pot_chips, rolls]
+  
+def wins_chips(rolls):
+    # -- snip --
+    return 1 not in rolls
+  
+def play():
+    # -- snip --
+    pot_chips = 0
+    player1 = 0
+    player2 = 0
+    current_player = random.choice([1, 2])
+    
+    print('Welcome to Bogart!')
+    print()
+    
+    turn = 0
+    rolls = []
+    while not game_over(player1, player2, rolls):
+        print('--' * 10, f'Turn {turn + 1}', '--' * 10)
+        print(f"Pot chips: {pot_chips}")
+        print(f"Player 1 chips: {player1}")
+        print(f"Player 2 chips: {player2}")
+        print(f"Now it's Player {current_player}'s turn.")
+        
+        pot_chips, rolls = take_full_turn(pot_chips)
+        
+        if wins_chips(rolls):
+            if(len(rolls) == 5):
+                print('Rolled 5 dice without acing out! Automatically wins the pot!')
+                break
+            if current_player == 1:
+                player1 += pot_chips
+            else:
+                player2 += pot_chips
+            pot_chips = 0
+        
+        current_player = switch_player(player1, player2, rolls, current_player)
+        turn += 1
+    
+    print()
+    print()
+    print('-=' * 20)     
+    print()
+    
+    current_chips = player1 if current_player == 1 else player2
+    print(f"Player {current_player} wins, with {current_chips} chips!")
+    
+if __name__ == "__main__":
+    play()
+```
+
+实测结果：
+
+```bash
+python demo.py    
+Welcome to Bogart!
+
+-------------------- Turn 1 --------------------
+Pot chips: 0
+Player 1 chips: 0
+Player 2 chips: 0
+Now it's Player 2's turn.
+Rolled: [2]
+Would you like to continue your turn? (y/n) y
+Rolled: [1, 5] (Aced out)
+Pot now has 3 chips.
+-------------------- Turn 2 --------------------
+Pot chips: 3
+Player 1 chips: 0
+Player 2 chips: 0
+Now it's Player 1's turn.
+Rolled: [4]
+Would you like to continue your turn? (y/n) y
+Rolled: [3, 3] 
+Pot now has 6 chips.
+Would you like to continue your turn? (y/n) y
+Rolled: [1, 1, 6] (Aced out)
+Pot now has 9 chips.
+-------------------- Turn 3 --------------------
+Pot chips: 9
+Player 1 chips: 0
+Player 2 chips: 0
+Now it's Player 2's turn.
+Rolled: [6]
+Would you like to continue your turn? (y/n) y
+Rolled: [1, 3] (Aced out)
+Pot now has 12 chips.
+-------------------- Turn 4 --------------------
+Pot chips: 12
+Player 1 chips: 0
+Player 2 chips: 0
+Now it's Player 1's turn.
+Rolled: [1] (Aced out)
+-------------------- Turn 5 --------------------
+Pot chips: 13
+Player 1 chips: 0
+Player 2 chips: 0
+Now it's Player 2's turn.
+Rolled: [4]
+Would you like to continue your turn? (y/n) y
+Rolled: [1, 6] (Aced out)
+Pot now has 16 chips.
+-------------------- Turn 6 --------------------
+Pot chips: 16
+Player 1 chips: 0
+Player 2 chips: 0
+Now it's Player 1's turn.
+Rolled: [3]
+Would you like to continue your turn? (y/n) n
+-------------------- Turn 7 --------------------
+Pot chips: 0
+Player 1 chips: 17
+Player 2 chips: 0
+Now it's Player 2's turn.
+Rolled: [3]
+Would you like to continue your turn? (y/n) y
+Rolled: [3, 4] 
+Pot now has 3 chips.
+Would you like to continue your turn? (y/n) y
+Rolled: [3, 6, 5] 
+Pot now has 6 chips.
+Would you like to continue your turn? (y/n) y
+Rolled: [2, 3, 3, 4] 
+Pot now has 10 chips.
+Would you like to continue your turn? (y/n) y
+Rolled: [6, 4, 4, 1, 5] (Aced out)
+Pot now has 15 chips.
+-------------------- Turn 8 --------------------
+Pot chips: 15
+Player 1 chips: 17
+Player 2 chips: 0
+Now it's Player 1's turn.
+Rolled: [4]
+Would you like to continue your turn? (y/n) n
+
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Player 1 wins, with 33 chips!
+```
+
+> [!tip]
+>
+> **实测备忘**
+>
+> 原书代码存在逻辑漏洞：在完整回合结束后、累加奖池筹码前，还应该先确认第二个游戏结束条件：5 个骰子均不为 1 点。若满足，则直接结束游戏，跳过后续的累加逻辑。
+>
+> 因此第 `3.3` 步更正前后对比如下：
+>
+> ```python
+> # before
+> if wins_chips(rolls):
+>     if current_player == 1:
+>         player1 += pot_chips
+>     else:
+>         player2 += pot_chips
+>     pot_chips = 0
+> 
+> # after
+> if wins_chips(rolls):
+>     if(len(rolls) == 5):
+>         print('Rolled 5 dice without acing out! Automatically wins the pot!')
+>         break
+>     if current_player == 1:
+>         player1 += pot_chips
+>     else:
+>         player2 += pot_chips
+>     pot_chips = 0
+> ```
+>
+> 这个 Bug 非常隐蔽，它出现在自顶向下的流程设计阶段（步骤 `3.3`）。作者本意是想强调问题拆分能力的重要性，结果偏偏在这里出了 Bug，直到后面实测才发现问题。那么，AI 能否在流程设计方面也做些工作呢？如果可以，AI 设计的流程应该如何验证有效性呢？现阶段可能还是只能依靠开发者手动审核验证，这样还不如不用 AI（或许可以从强化测试来解决这个问题，如 TDD、BDD 等）。
+
+
 
 
 
